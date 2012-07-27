@@ -1,0 +1,20 @@
+title: A *very* simple static site generator
+template: index
+header: header
+footer: footer
+
+**Welcome on this very first page**
+I present to you a very young and small project called *unnamed*.
+
+Its purpose is mainly to convert markdown / less files, into a static site.
+
+For this purpose, it include a very simple template binder :
+
+before : Include all files in the header key before your content
+after : Include all files in the header key after your content
+content : The content of your markdown file is write into the content tag in your template.
+
+All the other tags will be bond to the DOM with the css syntax.
+
+You can set for example a date, an .author, a #title.
+They will be bond to respectively : <date></date>, <anything class="author"></anything>, <anything id="title"></anything>

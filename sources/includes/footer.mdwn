@@ -1,0 +1,4 @@
+template: footer
+included
+
+This is the footer
