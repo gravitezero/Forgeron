@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <link rel="stylesheet" type="text/css" href="styles/style.css" />
+        <title>A simple static site generator</title>
+    </head>
+    <body>
+    	<header>
+<img src="png/icon.png" alt="Handcrafted" />
+</header>
+
+<h1>Forgeron</h1>
+<p>Forgeron is static site generator written in Nodejs, it's greatly inspired by flatiron's <a href="https://github.com/flatiron/blacksmith">Blacksmith</a>.<br />The name is the french translation for blacksmith. (I'm french, and I liked the idea of a blacksmith hitting your contents against your templates).
+
+</p>
+<p>For the moment, Forgeron is only an apprentice, but it still can do some nice gears, like this small site.
+
+</p>
+<h1>Why use it ?</h1>
+<p>Why should you use Forgeron instead of others CMS or site generators.
+
+</p>
+<p>I think that for web site with small content generation (exactly like blogs), no needs for the server to do extra binding works.
+So, by compiling my websites only at each content generation, I let my servers chill out, save electricity, reduce carbon impacts, and at the end, yes, I saved earth. 
+
+</p>
+<p>Forgeron is very flexible, it can make both your simple holiday blog, and a very large website with lots of pages.
+I never tested it on a very large scale, but it should works flawlessly.
+
+</p>
+<p>Forgeron will be able to not regenerate the content that didn't change.
+
+</p>
+<p>Forgeron will give you a dev version of your website, specially to adjust templates and styles.
+
+</p>
+<p>Also, Forgeron is fully made with love and compassion :)
+
+</p>
+<h1>How to use it ?</h1>
+<p>Forgeron basically copy and transform files from sources directory, to public directory.  
+
+</p>
+<p>Forgeron currently understand 3 kind of files : html, mdwn and less.
+
+</p>
+<ul>
+<li><strong>less</strong> files are the stylesheets, they are converted to css.  </li>
+<li><strong>mdwn</strong> files are the pages content.  </li>
+<li><strong>html</strong> files are the pages templates.  </li>
+</ul>
+<p>Forgeron will take every page, bind it to a template and put it in the same path in the public directory.  
+
+</p>
+<p>Each page contains the page content, written in markdown, plus the meta data.
+Forgeron is very flexible about metadata, he understand some few basic command, and for <em>every</em> meta data he don't understand, he will try to bind it to the template.  
+
+</p>
+<h2>Meta data</h2>
+<ul>
+<li><strong>template</strong> specify the template name (not path, that's mean no doublon, or it will crash).</li>
+<li><strong>header</strong> will bind a specific page with its template before the current page content, or in the header tag is there is one.</li>
+<li><strong>footer</strong> will bind a specific page with its template after the current page content, or in the footer tag is there is one.</li>
+<li><strong>assets</strong> does nothing for the moment, but it might be useful later</li>
+<li><strong>collection</strong> does nothin neither, but in a futur release, it will gather every page in a folder, then add them after the current page content.</li>
+<li><strong>content</strong> is the marked content of the page.</li>
+</ul>
+<h2>Binding</h2>
+<p>Forgeron take all these meta data to build a document.
+Each key in the metadata is a selector to find the tag to bind to in the template.
+For example :
+
+</p>
+<ul>
+<li>the date meta data will be bound to the date tag in the page.</li>
+<li>the #author will be bound to the tag with the author id.</li>
+<li>the .tags will be bound to the tag with the tags class.</li>
+</ul>
+
+        <footer><!-- Footer -->
+
+<p>Forgeron 2012<br />by <a href="https://github.com/gravitezero">Gravitezero</a>
+</p>
+</footer>
+    </body>
+</html>
