@@ -1,4 +1,7 @@
-template: footer
 included
 
-This is the footer
+[]()
+<!-- Footer -->
+
+Forgeron 2012  
+by [Gravitezero](https://github.com/gravitezero)

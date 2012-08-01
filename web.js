@@ -114,9 +114,14 @@ function extractMetaData(data) {
   // Extract Meta data
   var match;
   var meta = [];
+
+  // TODO REPAIR THIS
+  // regexp won't stop until =
   while(match = data.match(/^\s*([\#.a-z0-9_-]+)\s*:?\s*(.*)\s*\n/i)) {
     data = data.substr(match[0].length);
     meta[match[1]] = match[2] === '' ? true : match[2];
+
+    console.log(match[1]);
   }
 
   meta['content'] = data;
@@ -197,6 +202,8 @@ function buildPage(page, callback){
     // Template
     if (meta['template'] && struct.templates[meta['template']]) {
       meta.template = fs.readFileSync(src + struct.templates[meta['template']], 'utf8');
+    } else {
+      meta.template = '<content />';
     }
 
     callback(meta);
