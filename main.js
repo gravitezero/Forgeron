@@ -24,6 +24,17 @@ var counter = 0;
 
 port = process.env.PORT || 5000;
 
+
+
+// TODO make wait pass arguments
+// TODO make then prepare the struct
+// TODO make collection :
+//        make pages have a short description
+//        make short description place the read more link
+// TODO while scrapping register tags, and authors to make collection about tags or author
+// TODO save scrapping result in a .forgeron file to update only changed pages
+
+
 function getFileExt(file){
   var fileName = file.split('.');
   var result = {};
@@ -37,37 +48,75 @@ function getFileExt(file){
   return result;
 };
 
-function scrap(path, scrap_sozu){
+/*function scrap(path, scrap_sozu){
   scrap_sozu.needs(
     fs.readdir, src + path, function(err, files){
-        if (err) throw err;
+      if (err) throw err;
 
-        files.forEach(function(file){
+      files.forEach(function(file){
+        scrap_sozu.needs(
+          fs.stat, src + path + '/' + file, function(err, stat) {
 
-          scrap_sozu.needs(
-            fs.stat, src + path + '/' + file, function(err, stat) {
+            if (!stat)
+              console.log('Error : ' + stat);
 
-              if (!stat)
-                console.log('Error : ' + stat);
+            if (stat.isDirectory())
+              scrap(path + '/' + file, scrap_sozu);
 
-              if (stat.isDirectory())
-                scrap(path + '/' + file, scrap_sozu);
+            if (stat.isFile()) {
+              fileName = getFileExt(file);
 
-              if (stat.isFile()) {
-                fileName = getFileExt(file);
-
-                if (fileType[fileName.ext]) {
-                  struct[fileType[fileName.ext]][fileName.base] = path + '/' + file;
-                }
+              if (fileType[fileName.ext]) {
+                struct[fileType[fileName.ext]][fileName.base] = path + '/' + file;
               }
-
             }
-          );
-        });
-
+          }
+        );
+      });
     }
   );
-};
+};/**/
+
+function scrap(path, callback){
+  var files_sozu = new sozu(this, 'files'); // TODO rename these sozu
+  var file_sozu = new sozu(this, 'file');
+  var placeholder;
+
+  files_sozu
+    .needs(fs.readdir, src + path, function(err, files){
+      if (err) throw err;
+      placeholder = files;
+      // TODO FIND A BETTER WAY TO RETRIEVE ARGS AND RESULTS
+    })
+    .then(function(){
+      console.log('finished files_sozu : ', placeholder);
+    });
+
+  file_sozu.wait(files_sozu)
+    .needs(function(one, two){
+      console.log('>>> needs ', one, two); // TODO Still errors about early callback
+    }, files_sozu, placeholder)
+    .needsEach(files_sozu.placeholder, fs.stat, function(file){
+      return [src + path + '/' + file, function(err, stat) {
+        if (!stat)
+          console.log('Error : ' + stat);
+
+        if (stat.isDirectory())
+          scrap(path + '/' + files[i]);
+
+        if (stat.isFile()) {
+          fileName = getFileExt(files[i]);
+
+          if (fileType[fileName.ext]) {
+            struct[fileType[fileName.ext]][fileName.base] = path + '/' + files[i];
+          }
+        }
+      }];
+    })
+    .then(callback);
+    console.log('declared file_sozu');
+}
+
 
 function changeFileExtension(path, extension) {
   path = path.split('.');
@@ -93,7 +142,6 @@ function createPath(root, path) {
 function writeFile(fileName, data) {
   fs.writeFile(fileName, data, function (err) {
     if (err) throw err;
-    console.log('>>> ' + fileName + ' generated');
   });
 };
 
@@ -108,7 +156,7 @@ function extractMetaData(data) {
     data = data.substr(match[0].length);
     meta[match[1]] = match[2] === '' ? true : match[2];
 
-    console.log(match[1]);
+    //console.log(match[1]);
   }
 
   meta['content'] = data;
@@ -119,62 +167,58 @@ function bind(meta, callback) {
   var doc  = jsdom.jsdom(meta.template? meta.template : '').createWindow().document,
       $doc = $(doc);
 
-  var join = new Join(function(doc){
+  var doc_sozu = new sozu(this, 'doc');
 
+  doc_sozu
+  .needs(function(doc_sozu){
+    for( var key in meta ) {
+      if (key === 'header'){
 
+        var headers = meta[key].split(', ');
+        for (var header in headers) (function(header){
+          doc_sozu.needs(buildPage,header,function(meta){
+            bind(meta, function(html){
+              var header = $doc.find('header');
+              if (header.length) header.append(html);
+              else $doc.find('content').before(html);
+            });
+          });
+        })(headers[header]);
 
+      } else if (key === 'footer'){
+
+        var footers = meta[key].split(', ');
+        for (var footer in footers) (function(footer){
+          doc_sozu.needs(buildPage, footer, function(meta){
+            bind(meta, function(html){
+              var footer = $doc.find('footer');
+              if (footer.length) footer.append(html);
+              else $doc.find('content').after(html);
+            });
+          });
+        })(footers[footer]);
+
+      } else if (key === 'assets') {
+        // TODO assets
+      } else if (key === 'template' ) {
+        // just do nothing
+      } else if (key === 'collection') {
+        // TODO collection
+      } else if (key === 'content') {
+        $doc.find('content').html(meta.content);
+      } else {
+        $doc.find(key).html(meta[key]);
+      }
+    }
+  }, doc_sozu)
+
+  doc_sozu
+  .then(function(doc){
     var content = $(doc).find('content');
-    // In a very single 
     content.after(content.html());
     content.remove();
     callback(doc.innerHTML);
   });
-
-  join.newJob();
-  for( var key in meta ) {
-    if (key === 'header'){
-
-      var headers = meta[key].split(', ');
-      for (var header in headers) (function(header){
-        join.newJob();
-        buildPage(header,function(meta){
-          bind(meta, function(html){
-            var header = $doc.find('header');
-            if (header.length) header.append(html);
-            else $doc.find('content').before(html);
-            join.callback(doc);
-          });
-        });
-      })(headers[header]);
-
-    } else if (key === 'footer'){
-
-      var footers = meta[key].split(', ');
-      for (var footer in footers) (function(footer){
-        join.newJob();
-        buildPage(footer,function(meta){
-          bind(meta, function(html){
-            var footer = $doc.find('footer');
-            if (footer.length) footer.append(html);
-            else $doc.find('content').after(html);
-            join.callback(doc);
-          });
-        });
-      })(footers[footer]);
-
-    } else if (key === 'assets') {
-      // TODO assets
-    } else if (key === 'template' ) {
-      // just do nothing
-    } else if (key === 'collection') {
-      // TODO collection
-    } else if (key === 'content') {
-      $doc.find('content').html(meta.content);
-    } else {
-      $doc.find(key).html(meta[key]);
-    }
-  }
-  join.callback(doc);  
 };
 
 function buildPage(page, callback){
@@ -199,10 +243,10 @@ function buildPage(page, callback){
 
 function make(pub) {
 
-  console.log('--- MAKE ---');
+  var styles_sozu = new sozu(this, 'styles');
 
   for (var style in struct.styles) (function (style) {
-    fs.readFile(src + struct.styles[style], 'utf8', function (err, data) {
+    style_sozu.needs(fs.readFile, src + struct.styles[style], 'utf8', function (err, data) {
       less.render(data, function(err, css){
         if (err) throw err;
         createPath(pub, struct.styles[style])
@@ -222,19 +266,20 @@ function make(pub) {
   })(page);  
 };
 
-var struct_sozu = new sozu(this);
+var struct_sozu = new sozu(this, 'struct');
+var pub_sozu = new sozu(this, 'pub');
 
-struct_sozu.
-needs(scrap, '', struct_sozu).
+struct_sozu
+  .needs(scrap, '', function(struct){
+    console.log('callback scrapping');
+  })
+  .then(function(){
+    console.log('>>> structured', struct_sozu._name);
+  });
 
-then(make(pub));
-
-var pub_sozu = new sozu(this).
-
-wait(struct_sozu).
-
-needs(make, pub).
-
-then(function(){
-  console.log('done');
-})
+/*pub_sozu
+  .wait(struct_sozu)
+  .needs(make, pub)
+  .then(function(){
+    console.log('>>> published');
+  });*/
