@@ -91,21 +91,15 @@ function scrap(path, callback){
     .then();
 
   file_sozu.wait(files_sozu)
-    // .needs(function(one){
-    //   console.log('>>> needs ', one);
-    // }, files_sozu.getPlaceholder('files'))
-
-    // TODO how to get the file variable inside the fs.stat callback ?
-
     .needsEach(files_sozu.getPlaceholder('file'), fs.stat, function(file){
-
       var fn = function(err, stat) {
-        console.log('>>> this ', file);
         if (!stat)
           console.log('Error : ' + stat);
 
-        if (stat.isDirectory())
-          scrap(path + '/' + file);
+        if (stat.isDirectory()) {
+          file_sozu.needs(scrap, path + '/' + file, function(struct){
+          });
+        }
 
         if (stat.isFile()) {
           fileName = getFileExt(file);
@@ -275,17 +269,12 @@ var pub_sozu = new sozu(this, 'pub');
 
 struct_sozu
   .needs(scrap, '', function(struct){
-    console.log('callback scrapping');
   })
   .then(function(){
-    console.log('>>> structured', struct_sozu.result[0]);
+    console.log('>>> structured', struct);
   });
 
-/* TODO here is the problem :
- * Everything run fine, EXCEPT, that the then callback is called BEFORE all the recursive needs are done !!!
- * Only the first level is done in the right time, not the second.
- * WHY THE FUCK IS IT THIS WAY ??? SOZU SCREW IT AGAIN !!!
- */
+//setTimeout(function(){console.log('EOF')}, 3000);
 
 /*pub_sozu
   .wait(struct_sozu)
