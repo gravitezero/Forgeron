@@ -80,41 +80,45 @@ function getFileExt(file){
 function scrap(path, callback){
   var files_sozu = new sozu(this, 'files'); // TODO rename these sozu
   var file_sozu = new sozu(this, 'file');
-  var placeholder;
+  
+  files_sozu.placeholder('files');
 
   files_sozu
     .needs(fs.readdir, src + path, function(err, files){
       if (err) throw err;
-      placeholder = files;
-      // TODO FIND A BETTER WAY TO RETRIEVE ARGS AND RESULTS
+      files_sozu.setPlaceholder('files', files);
     })
-    .then(function(){
-      console.log('finished files_sozu : ', placeholder);
-    });
+    .then();
 
   file_sozu.wait(files_sozu)
-    .needs(function(one, two){
-      console.log('>>> needs ', one, two); // TODO Still errors about early callback
-    }, files_sozu, placeholder)
-    .needsEach(files_sozu.placeholder, fs.stat, function(file){
-      return [src + path + '/' + file, function(err, stat) {
+    // .needs(function(one){
+    //   console.log('>>> needs ', one);
+    // }, files_sozu.getPlaceholder('files'))
+
+    // TODO how to get the file variable inside the fs.stat callback ?
+
+    .needsEach(files_sozu.getPlaceholder('file'), fs.stat, function(file){
+
+      var fn = function(err, stat) {
+        console.log('>>> this ', file);
         if (!stat)
           console.log('Error : ' + stat);
 
         if (stat.isDirectory())
-          scrap(path + '/' + files[i]);
+          scrap(path + '/' + file);
 
         if (stat.isFile()) {
-          fileName = getFileExt(files[i]);
+          fileName = getFileExt(file);
 
           if (fileType[fileName.ext]) {
-            struct[fileType[fileName.ext]][fileName.base] = path + '/' + files[i];
+            struct[fileType[fileName.ext]][fileName.base] = path + '/' + file;
           }
         }
-      }];
+      }
+
+      return [src + path + '/' + file, fn];
     })
     .then(callback);
-    console.log('declared file_sozu');
 }
 
 
@@ -274,8 +278,14 @@ struct_sozu
     console.log('callback scrapping');
   })
   .then(function(){
-    console.log('>>> structured', struct_sozu._name);
+    console.log('>>> structured', struct_sozu.result[0]);
   });
+
+/* TODO here is the problem :
+ * Everything run fine, EXCEPT, that the then callback is called BEFORE all the recursive needs are done !!!
+ * Only the first level is done in the right time, not the second.
+ * WHY THE FUCK IS IT THIS WAY ??? SOZU SCREW IT AGAIN !!!
+ */
 
 /*pub_sozu
   .wait(struct_sozu)
