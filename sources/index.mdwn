@@ -1,3 +1,4 @@
+name: index
 title: A simple static site generator
 template: index
 footer: footer

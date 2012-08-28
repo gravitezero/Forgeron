@@ -1,4 +1,5 @@
+name: header
 template: header
-included
+included: true
 
 This is the header

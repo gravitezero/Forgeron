@@ -1,6 +1,7 @@
-included
+name: footer
+included: true
 
-[]()
+=
 <!-- Footer -->
 
 Forgeron 2012  

@@ -48,35 +48,6 @@ function getFileExt(file){
   return result;
 };
 
-/*function scrap(path, scrap_sozu){
-  scrap_sozu.needs(
-    fs.readdir, src + path, function(err, files){
-      if (err) throw err;
-
-      files.forEach(function(file){
-        scrap_sozu.needs(
-          fs.stat, src + path + '/' + file, function(err, stat) {
-
-            if (!stat)
-              console.log('Error : ' + stat);
-
-            if (stat.isDirectory())
-              scrap(path + '/' + file, scrap_sozu);
-
-            if (stat.isFile()) {
-              fileName = getFileExt(file);
-
-              if (fileType[fileName.ext]) {
-                struct[fileType[fileName.ext]][fileName.base] = path + '/' + file;
-              }
-            }
-          }
-        );
-      });
-    }
-  );
-};/**/
-
 function scrap(path, callback){
   var files_sozu = new sozu(this, 'files'); // TODO rename these sozu
   var file_sozu = new sozu(this, 'file');
@@ -97,8 +68,7 @@ function scrap(path, callback){
           console.log('Error : ' + stat);
 
         if (stat.isDirectory()) {
-          file_sozu.needs(scrap, path + '/' + file, function(struct){
-          });
+          file_sozu.needs(scrap, path + '/' + file, function(){});
         }
 
         if (stat.isFile()) {
@@ -137,9 +107,10 @@ function createPath(root, path) {
   });
 };
 
-function writeFile(fileName, data) {
+function writeFile(fileName, data, callback) {
   fs.writeFile(fileName, data, function (err) {
     if (err) throw err;
+    callback();
   });
 };
 
@@ -165,10 +136,10 @@ function bind(meta, callback) {
   var doc  = jsdom.jsdom(meta.template? meta.template : '').createWindow().document,
       $doc = $(doc);
 
-  var doc_sozu = new sozu(this, 'doc');
+  var doc_sozu = new sozu(this, meta.name);
 
   doc_sozu
-  .needs(function(doc_sozu){
+  .needs(function(){
     for( var key in meta ) {
       if (key === 'header'){
 
@@ -208,14 +179,14 @@ function bind(meta, callback) {
         $doc.find(key).html(meta[key]);
       }
     }
-  }, doc_sozu)
+  })
 
-  doc_sozu
-  .then(function(doc){
+  .then(function(){
     var content = $(doc).find('content');
     content.after(content.html());
     content.remove();
     callback(doc.innerHTML);
+    console.log('>>> then finished');
   });
 };
 
@@ -239,46 +210,39 @@ function buildPage(page, callback){
   });
 };
 
-function make(pub) {
-
-  var styles_sozu = new sozu(this, 'styles');
-
-  for (var style in struct.styles) (function (style) {
-    style_sozu.needs(fs.readFile, src + struct.styles[style], 'utf8', function (err, data) {
-      less.render(data, function(err, css){
-        if (err) throw err;
-        createPath(pub, struct.styles[style])
-        writeFile(pub + changeFileExtension(struct.styles[style], 'css'), css);
-      });
-    });
-  })(style);
-
-  for (var page in struct.pages) (function (page) {
-      buildPage(page, function(meta){
-        if(!meta.included)
-          bind(meta, function(html){
-            createPath(pub, struct.pages[page]);
-            writeFile(pub + changeFileExtension(struct.pages[page], 'html'), '<!DOCTYPE html>' + html);
-          });
-      });
-  })(page);  
-};
-
 var struct_sozu = new sozu(this, 'struct');
 var pub_sozu = new sozu(this, 'pub');
+var styles_sozu = new sozu (this, 'styles');
 
 struct_sozu
-  .needs(scrap, '', function(struct){
-  })
+  .needs(scrap, '', function(){})
   .then(function(){
     console.log('>>> structured', struct);
   });
 
-//setTimeout(function(){console.log('EOF')}, 3000);
+styles_sozu.wait(struct_sozu)
+  .needsEach(struct.styles, fs.readFile, function(style){
+    var fn = function (err, data) {
 
-/*pub_sozu
-  .wait(struct_sozu)
-  .needs(make, pub)
+      var css_sozu = new sozu(this, 'css');
+      var file_sozu = new sozu(this, 'file');
+
+      css_sozu
+        .needs(less.render, data, function(err, css){
+          if (err) throw err;
+          css_sozu.setPlaceholder('css', css);
+        })
+        .needs(createPath, pub, style)
+        .then();
+
+      file_sozu.wait(css_sozu)
+        .needs(writeFile, pub + changeFileExtension(style, 'css'), css_sozu.getPlaceholder('css'), function(){
+          // Be aware that styles_sozu will finish BEFORE file_sozu
+        })
+        .then();
+    };
+    return [src + style, 'utf8', fn];
+  })
   .then(function(){
     console.log('>>> published');
-  });*/
+  });
