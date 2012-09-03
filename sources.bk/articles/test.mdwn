@@ -1,0 +1,12 @@
+template: test
+#title: This is a test
+#author: Etienne Brodu
+#date: today
+.tags: test, anothertest
+included
+
+short:
+    # even in short it works
+
+content:
+    # It works

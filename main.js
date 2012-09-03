@@ -35,6 +35,11 @@ port = process.env.PORT || 5000;
 // TODO save scrapping result in a .forgeron file to update only changed pages
 
 
+// TODO allow needs of sozu like A_sozu.needs(B_sozu)
+// needs is different from wait,
+// wait will delay the execution until the other sozu finish
+// needs will make one sozu to wait before executing then.
+
 function getFileExt(file){
   var fileName = file.split('.');
   var result = {};
@@ -115,20 +120,37 @@ function writeFile(fileName, data, callback) {
 };
 
 function extractMetaData(data) {
-  // Extract Meta data
-  var match;
+
+  /*
+   * Each meta is a key : value pair.
+   * a line containing a key start without space, the key is finished with a :
+   * the value follow either on the same line, or on the next line starting with indentation
+   *
+   * {} indicate a list of items -> {.item} will clone the .item tag inside its parent element, like for tags, or author
+   * @ access an attribute of a tag -> .item@href will set the href attribute
+   * TODO how to generate a lit with specific attributes ?
+   */
+
   var meta = [];
+  var re = RegExp('^([^ \n])', 'img');
 
-  // TODO REPAIR THIS
-  // regexp won't stop until =
-  while(match = data.match(/^\s*([\#.a-z0-9_-]+)\s*:?\s*(.*)\s*\n/i)) {
-    data = data.substr(match[0].length);
-    meta[match[1]] = match[2] === '' ? true : match[2];
+  m = re.test(data);
+  var begin = re.lastIndex - 1;
+  var end = 0;
 
-    //console.log(match[1]);
+  while (end !== data.length) {
+    m = re.test(data);
+    end = (re.lastIndex > 0) ? re.lastIndex-1 : data.length;
+
+    var match = data.substr(begin, end-begin).match(/^([^:\n\s]+)(\s*:?\s*).*(\s*)$/im);
+    var start = begin+match[1].length+match[2].length;
+    var length = end-start-match[3].length;
+
+    meta[match[1]] = (length === 0) ? true : data.substr(start, length).replace(/\n {2}/, '\n');
+
+    begin  = re.lastIndex-1;
   }
 
-  meta['content'] = data;
   return meta;
 };
 
@@ -212,7 +234,8 @@ function buildPage(page, callback){
 
 var struct_sozu = new sozu(this, 'struct');
 var pub_sozu = new sozu(this, 'pub');
-var styles_sozu = new sozu (this, 'styles');
+var styles_sozu = new sozu(this, 'styles');
+var pages_sozu = new sozu(this, 'pages');
 
 struct_sozu
   .needs(scrap, '', function(){})
@@ -244,5 +267,28 @@ styles_sozu.wait(struct_sozu)
     return [src + style, 'utf8', fn];
   })
   .then(function(){
-    console.log('>>> published');
+    console.log('>>> styles published');
   });
+
+pages_sozu.wait(struct_sozu)
+  .needsEach(struct.pages, fs.readFile, function(page){
+    var fn = function (err, data) {
+      if (err) throw err;
+
+      var meta = extractMetaData(data);     
+
+      // Markdown
+      meta.content = marked(meta.content);
+
+      // Template
+      if (meta['template'] && struct.templates[meta['template']]) {
+        meta.template = fs.readFileSync(src + struct.templates[meta['template']], 'utf8');
+      } else {
+        meta.template = '<content />';
+      }
+    };
+    return [src + page, 'utf8', fn];
+  })
+  .then(function(){
+    console.log('>>> pages published');
+  })
