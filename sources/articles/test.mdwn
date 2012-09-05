@@ -1,9 +1,21 @@
-template: test
+§page: test
+§short: short
+§abs: abs
+
 #title: This is a test
+
 #author: Etienne Brodu
+#author@attr: attrValue
+
 #date: today
-{.tags}: test, anothertest
-included
+
+{.tag}:
+  test,
+  anothertest,
+  yet another test
+
+before: stuffs, otherstuffs@test
+after: differentstuffs
 
 short:
   # even in short it works

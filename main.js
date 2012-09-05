@@ -53,6 +53,34 @@ function getFileExt(file){
   return result;
 };
 
+function changeFileExtension(path, extension) {
+  path = path.split('.');
+  path[path.length - 1] = extension;
+  path = path.join('.');
+  return path;
+};
+
+function createPath(root, path) {
+  path.split('/').forEach(function(pathPart){
+
+    if(pathPart.length === 0) return;
+
+    if (fs.existsSync(root)) {
+      // serve file
+    } else {
+      fs.mkdirSync(root, 0750);
+    }
+    root += '/' + pathPart;
+  });
+};
+
+function writeFile(fileName, data, callback) {
+  fs.writeFile(fileName, data, function (err) {
+    if (err) throw err;
+    callback();
+  });
+};
+
 function scrap(path, callback){
   var files_sozu = new sozu(this, 'files'); // TODO rename these sozu
   var file_sozu = new sozu(this, 'file');
@@ -90,42 +118,16 @@ function scrap(path, callback){
     .then(callback);
 }
 
-
-function changeFileExtension(path, extension) {
-  path = path.split('.');
-  path[path.length - 1] = extension;
-  path = path.join('.');
-  return path;
-};
-
-function createPath(root, path) {
-  path.split('/').forEach(function(pathPart){
-
-    if(pathPart.length === 0) return;
-
-    if (fs.existsSync(root)) {
-      // serve file
-    } else {
-      fs.mkdirSync(root, 0750);
-    }
-    root += '/' + pathPart;
-  });
-};
-
-function writeFile(fileName, data, callback) {
-  fs.writeFile(fileName, data, function (err) {
-    if (err) throw err;
-    callback();
-  });
-};
-
-function extractMetaData(data) {
+function createMeta(data) {
 
   /*
    * Each meta is a key : value pair.
    * a line containing a key start without space, the key is finished with a :
    * the value follow either on the same line, or on the next line starting with indentation
    *
+   * § indicate a template to bind against, so a same page can have multiple template (page, short, thumbsnail)
+   *   a page could be called this way: footer : footer§footer
+   *   calling only footer : footer will take the only template, or a template in a nondetermist way (not random).
    * {} indicate a list of items -> {.item} will clone the .item tag inside its parent element, like for tags, or author
    * @ access an attribute of a tag -> .item@href will set the href attribute
    * TODO how to generate a lit with specific attributes ?
@@ -146,6 +148,7 @@ function extractMetaData(data) {
     var start = begin+match[1].length+match[2].length;
     var length = end-start-match[3].length;
 
+    //meta[match[1]] = (length === 0) ? true : marked(data.substr(start, length).replace(/\n {2}/, '\n'));
     meta[match[1]] = (length === 0) ? true : data.substr(start, length).replace(/\n {2}/, '\n');
 
     begin  = re.lastIndex-1;
@@ -155,6 +158,7 @@ function extractMetaData(data) {
 };
 
 function bind(meta, callback) {
+
   var doc  = jsdom.jsdom(meta.template? meta.template : '').createWindow().document,
       $doc = $(doc);
 
@@ -191,12 +195,8 @@ function bind(meta, callback) {
 
       } else if (key === 'assets') {
         // TODO assets
-      } else if (key === 'template' ) {
-        // just do nothing
       } else if (key === 'collection') {
         // TODO collection
-      } else if (key === 'content') {
-        $doc.find('content').html(meta.content);
       } else {
         $doc.find(key).html(meta[key]);
       }
@@ -212,24 +212,104 @@ function bind(meta, callback) {
   });
 };
 
-function buildPage(page, callback){
-  fs.readFile(src + struct.pages[page], 'utf8', function (err, data) {
-    if (err) throw err;
 
-    var meta = extractMetaData(data);     
+function make(meta, template, callback) {
+  if (!callback) {
+    callback = template;
 
-    // Markdown
-    meta.content = marked(meta.content);
-
-    // Template
-    if (meta['template'] && struct.templates[meta['template']]) {
-      meta.template = fs.readFileSync(src + struct.templates[meta['template']], 'utf8');
-    } else {
-      meta.template = '<content />';
+    // the first § is the default template
+    for(key in meta) if (key[0] === '§') {
+      template = meta[key]//.toString();
+      break;
     }
+  }
 
-    callback(meta);
-  });
+  var doc;
+  var template_sozu = new sozu(this, 'template for '+ meta.title);
+  var doc_sozu = new sozu(this, meta.title);
+
+  template_sozu
+    .needs(fs.readFile, src + struct.templates[template], function(err, data){
+      template = data.toString();
+    })
+    .then(function(){});
+
+  doc_sozu.wait(template_sozu)
+    .needs(function(){
+
+      doc  = jsdom.jsdom(template).createWindow().document,
+      $doc = $(doc);
+
+      for(key in meta) {
+        var ikey;
+
+        /* INSERTION */
+
+        if (key === 'before'){
+
+          // var headers = meta[key].split(', ');
+          // for (var header in headers) (function(header){
+          //   doc_sozu.needs(buildPage,header,function(meta){
+          //     bind(meta, function(html){
+          //       var header = $doc.find('header');
+          //       if (header.length) header.append(html);
+          //       else $doc.find('content').before(html);
+          //     });
+          //   });
+          // })(headers[header]);
+
+          // TODO instead of inserting after and before, we should provide way to include pages into pages.
+          //      this way, we could insert different pages in different tags : CLEVER
+          //      (like nav, or aside)
+          // TODO another stuff : how to decide to make a page or not ??
+          //      the include flag isn't a good way
+          // TODO also, provide some hooks on flags, or on special ? char, for example, if a page present the ?hook flag, the user might want to transform meta with a func
+          //      that's means providing a way to define hooks, and to call them
+          //      not so complicated : a simple hook.js, which provide a hook object
+          //      if we find ?hook in a file, call the ?hook function with the meta associated
+
+          meta[key].split(',').forEach(function(before) { // For Each tag :
+            console.log(before);
+            before = before.match(/^\s*(.*)@?(.*)\s*$/); // remove unnecessary white spaces
+            //console.log('>>> before', before);
+          });
+
+
+        } else
+        if (ikey = key.match(/^{(.*)}$/)) { // Extract the key inside the {}
+
+        /* ITERATIONS */
+
+          ikey = ikey[1];
+          var refelm = $doc.find(ikey);
+          if (refelm) {
+            var parelm = refelm.parent();
+            meta[key].split(',').forEach(function(tag) { // For Each tag :
+              tag = tag.match(/^\s*(.*)\s*$/)[1]; // remove unnecessary white spaces
+              refelm.clone().appendTo(parelm).html(tag); // Append tag to parent
+            });
+            refelm.remove();
+          }
+        } else {
+
+        /* BINDING */
+
+          if (key[0] !== '§') { // don't worry about template
+            attr = key.split('@')[1]; // If an attribute is defined, extract it.
+            sel = key.split('@')[0];
+            if (attr)
+              $doc.find(sel).attr(attr, meta[key])
+            else
+              $doc.find(key).html(meta[key]);
+          }
+        }
+      }
+      console.log(doc.innerHTML)
+    })
+    .then(function(){
+      callback(doc.innerHTML);
+    })
+
 };
 
 var struct_sozu = new sozu(this, 'struct');
@@ -275,17 +355,21 @@ pages_sozu.wait(struct_sozu)
     var fn = function (err, data) {
       if (err) throw err;
 
-      var meta = extractMetaData(data);     
+      var html_sozu = new sozu(this, 'html');
+      var file_sozu = new sozu(this, 'file');
 
-      // Markdown
-      meta.content = marked(meta.content);
+      html_sozu
+        .needs(make, createMeta(data), function(html){
+          console.log('>>> ', page, ' binded');
+          html_sozu.setPlaceholder('html', html);
+        }).needs(createPath, pub, page)
+        .then();
 
-      // Template
-      if (meta['template'] && struct.templates[meta['template']]) {
-        meta.template = fs.readFileSync(src + struct.templates[meta['template']], 'utf8');
-      } else {
-        meta.template = '<content />';
-      }
+      // file_sozu.wait(html_sozu)
+      //   .needs(writeFile, pub + changeFileExtension(page, 'html'), html_sozu.getPlaceholder('html'), function(){
+      //     // Be aware that pages_sozu will finish BEFORE file_sozu
+      //   })
+      //   .then();
     };
     return [src + page, 'utf8', fn];
   })
