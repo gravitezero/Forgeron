@@ -1,0 +1,139 @@
+////////////////////////////////////
+              S O Z U
+////////////////////////////////////
+
+TODO make wait pass arguments
+TODO make then prepare the struct
+TODO allow needs of sozu like A_sozu.needs(B_sozu)
+needs is different from wait,
+wait will delay the execution until the other sozu finish
+needs will make one sozu to wait before executing then.
+
+
+
+////////////////////////////////////
+         J E L L Y F I S H
+////////////////////////////////////
+
+
+SEMANTIC
+========
+
+PAGE
+  is a list of SELECTER : CONTENT to be bind against a TEMPLATE
+  contains a default TEMPLATE to be bind against : the template selector
+  contains a way to determine if it's an endpoint page or not (if it'll be published or not) : the partial selector
+
+CONTENT
+  is a (maybe markdown parsed) string to be inserted into a TAG's ATTRIBUTE of a TEMPLATE
+
+TEMPLATE
+  is a simple html file defining the structure of a PAGE
+  it's also a list of TAG
+
+TAG
+  is a placeholder to receive CONTENT
+
+ATTRIBUTE
+  is a field inside a TAG to receive CONTENT
+
+SELECTOR
+  is a string to determine where the content associated with should go (which TAG and ATTRIBUTE)
+
+
+SELECTORS
+=========
+
+selecting a TAG is done in the CSS way
+() specify one TAG
+{} specify a list of TAGs
+indentation van be used to distinguish SELECTOR from CONTENT
+indentation markdown, no indent no markdown
+
+#author : etn
+
+.tags : tag1, tag2, tag3 
+    -> <* class='tags'>tag1, tag2, tag3</*>
+
+.tag : { tag1, tag2, tag3 }
+    -> <*><* class='tag'>tag1</*><* class='tag'>tag</*><* class='tag'>tag3</*></*>
+
+.tag : {tag1 href: tags/tag1, tag2 href: tags/tag2}
+    -> <*><* class='tag' href='tags/tag1'>tag1</*><* href='tags/tag1'>tag</*><* href='tags/tag1'>tag3</*></*>
+
+[name^='stuff-about-'] : (href: stuff@stuff.com)
+
+
+READ MORE LINK
+==============
+
+How to insert a read more link ?
+
+SELECTOR : /this
+    -> insert the path of the current page inside SELECTOR
+
+SELECTOR : /this title
+    -> insert title content inside SELECTOR
+
+SELECTOR : /page_name .tags
+    -> insert .tags content from page_name inside SELECTOR
+
+
+PAGE INSERTION
+==============
+
+How to insert a page inside another page specifying special arguments (like template)
+
+SELECTOR : /page_name(template: template)
+
+
+CONTENT GENERATION
+==================
+
+How to generate a list of content or pages (in intension or extension)
+
+Intention
+---------
+
+SELECTOR : /* #title
+    -> will generate a list from the #title of all the pages
+
+SELECTOR : /[.tags](template: template)
+    -> will generate a list af all the pages containing .tags
+
+Extension
+---------
+
+See example from SELECTORS
+
+
+LIST ORDERING
+=============
+
+How to order a list of pages by dates
+
+
+METAPAGE
+========
+
+How to generate easily each author/tag pages
+
+
+HOOKS
+=====
+
+How to provide a hook on flag
+For example if a page present the ?hook flag, the user might want to transform some meta with a function called hook, before the bond.
+
+
+WATCH
+=====
+
+Create a way to make the !watch function from less in markdown, generating a /dev with auto reload of contents
+
+
+CACHE
+=====
+
+while scrapping register tags, and authors to make collection about tags or authors
+save scrapping result in a .cache file to update only changed pages

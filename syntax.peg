@@ -1,0 +1,64 @@
+start
+  = Tuples
+
+Tuples
+  = tuple:Tuple tuples:(EOL+ Tuples)? {
+  if (tuples)
+    return ">>> " + tuple + '\n' + tuples[1]
+  else
+    return ">>>" + tuple
+  }
+
+Tuple
+  = left:Selector Spaces? Assign_char Spaces? right:Content Spaces* { return left + ' = ' + right}
+
+Selector
+  = selector:Word {return selector}
+
+Content
+  = text:Text
+{return '{' + text + '}'}
+
+Bracket_text
+  = '(' (!')' chars:Char+) ')' {return chars.join('')}
+
+Curly_text
+  = '{' (!'}' chars:Char+) '}' {return chars.join('')}
+
+Normal_text
+  = chars:Char+ {return chars.join('')}
+
+Text
+  = text:(Bracket_text/Curly_text/Normal_text) {return text}
+
+Paragraph_line
+  = Tab_char text:Text+ {return text}
+
+Paragraph
+  = EOL? line:Paragraph_line next:(EOL Paragraph)? {
+  if (next)
+    return line + next[0] + next[1]
+  else
+    return line
+  }
+
+Word
+  = chars:Characters+ { return chars.join('') }
+
+Spaces
+  = spaces:" "+ { return spaces.join("") }
+
+EOL
+  = space:Spaces* eol:"\n"+ {return eol.join('')}
+
+Characters
+  = [.#a-zA-Z0-9\[\]=^'"(),]
+
+Char
+  = .
+
+Assign_char
+  = [:]
+
+Tab_char
+  = "  "

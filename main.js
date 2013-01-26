@@ -129,7 +129,7 @@ function createMeta(data) {
    *   a page could be called this way: footer : footer§footer
    *   calling only footer : footer will take the only template, or a template in a nondetermist way (not random).
    * {} indicate a list of items -> {.item} will clone the .item tag inside its parent element, like for tags, or author
-   * @ access an attribute of a tag -> .item@href will set the href attribute
+   * @ access an attribute of a tag -> .item@href will set the href attribute (or href@.item)
    * TODO how to generate a lit with specific attributes ?
    */
 
