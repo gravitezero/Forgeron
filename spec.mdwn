@@ -20,7 +20,7 @@ SEMANTIC
 ========
 
 PAGE
-  is a list of SELECTER : CONTENT to be bind against a TEMPLATE
+  is a list of SELECTOR : CONTENT to be bind against a TEMPLATE
   contains a default TEMPLATE to be bind against : the template selector
   contains a way to determine if it's an endpoint page or not (if it'll be published or not) : the partial selector
 
@@ -47,7 +47,7 @@ SELECTORS
 selecting a TAG is done in the CSS way
 () specify one TAG
 {} specify a list of TAGs
-indentation van be used to distinguish SELECTOR from CONTENT
+indentation can be used to distinguish SELECTOR from CONTENT
 indentation markdown, no indent no markdown
 
 #author : etn
@@ -117,6 +117,7 @@ METAPAGE
 ========
 
 How to generate easily each author/tag pages
+create a page with inside the list of article written by author/with tag
 
 
 HOOKS

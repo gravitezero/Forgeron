@@ -1,23 +1,35 @@
+{
+  var article = {};
+}
+
 start
   = Tuples
 
 Tuples
   = tuple:Tuple tuples:(EOL+ Tuples)? {
-  if (tuples)
-    return ">>> " + tuple + '\n' + tuples[1]
-  else
-    return ">>>" + tuple
+
+   return article;
+
+    //if (tuples)
+      //return "+-> " + tuple + '\n' + tuples[1]
+    //else
+      //return "-->" + tuple
   }
 
 Tuple
-  = left:Selector Spaces? Assign_char Spaces? right:Content Spaces* { return left + ' = ' + right}
+  = left:Selector Spaces? Assign_char Spaces? right:Content Spaces* {
+  
+  article[left] = right;
+
+  return left + ' = ' + right
+}
 
 Selector
   = selector:Word {return selector}
 
 Content
-  = text:Text
-{return '{' + text + '}'}
+  = text:(Text / Paragraph)
+{return text}
 
 Bracket_text
   = '(' (!')' chars:Char+) ')' {return chars.join('')}
@@ -26,18 +38,27 @@ Curly_text
   = '{' (!'}' chars:Char+) '}' {return chars.join('')}
 
 Normal_text
-  = chars:Char+ {return chars.join('')}
+  = chars:(Characters / Spaces)+ {return chars.join('')}
 
 Text
-  = text:(Bracket_text/Curly_text/Normal_text) {return text}
+  = Bracket_text
+  / Curly_text
+  / Normal_text
 
 Paragraph_line
-  = Tab_char text:Text+ {return text}
+  = Tab_char text:Text+ {
+
+    if (text == '')
+      return '-';
+
+    return text;
+  }
 
 Paragraph
-  = EOL? line:Paragraph_line next:(EOL Paragraph)? {
+  = EOL? line:Paragraph_line next:(EOL+ Paragraph)? {
+
   if (next)
-    return line + next[0] + next[1]
+    return line + next[0].join('') + next[1]
   else
     return line
   }
