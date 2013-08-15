@@ -55,10 +55,10 @@ indentation markdown, no indent no markdown
 .tags : tag1, tag2, tag3 
     -> <* class='tags'>tag1, tag2, tag3</*>
 
-.tag : { tag1, tag2, tag3 }
+{.tag} : tag1, tag2, tag3
     -> <*><* class='tag'>tag1</*><* class='tag'>tag</*><* class='tag'>tag3</*></*>
 
-.tag : {tag1 href: tags/tag1, tag2 href: tags/tag2}
+{.tag} : (tag1, href: tags/tag1), (tag2, href: tags/tag2)
     -> <*><* class='tag' href='tags/tag1'>tag1</*><* href='tags/tag1'>tag</*><* href='tags/tag1'>tag3</*></*>
 
 [name^='stuff-about-'] : (href: stuff@stuff.com)

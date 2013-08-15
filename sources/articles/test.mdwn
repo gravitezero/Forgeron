@@ -1,26 +1,23 @@
-§page: test
-§short: short
-§abs: abs
+template: sources/templates/test.html
 
-#title: This is a test
+#title : This is a test post
 
-#author: Etienne Brodu
-#author@attr: attrValue
-
-#date: today
+#author: etn brd
+[name^="truc"] : (href: truc)
 
 {.tag}:
   test,
-  anothertest,
+  another test,
   yet another test
 
-before: stuffs, otherstuffs@test
+{before}: stuffs, otherstuffs
 after: differentstuffs
 
 short:
   # even in short it works
 
 content:
-  # It works
-
-  With multiple line, and so on ...
+  # It works, should have 1 :
+  should have 2 :
+  
+  With multiple line, and so on ... should have 0 :

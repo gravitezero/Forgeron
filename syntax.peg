@@ -1,82 +1,74 @@
 {
-  var article = {};
+  // Arguments :
+  // template, callback
+  var binder            = require('./lib/binder.js').apply(null, Array.prototype.slice.call(arguments,2));
+  
 }
 
 start
-  = Tuples
+  = Tuples { return binder.end() }
 
 Tuples
-  = tuple:Tuple tuples:(EOL+ Tuples)? {
-
-   return article;
-
-    //if (tuples)
-      //return "+-> " + tuple + '\n' + tuples[1]
-    //else
-      //return "-->" + tuple
-  }
+  = tuple:Tuple tuples:(EOL+ Tuples)? EOL* { }
 
 Tuple
-  = left:Selector Spaces? Assign_char Spaces? right:Content Spaces* {
-  
-  article[left] = right;
-
-  return left + ' = ' + right
-}
+  = "template" Spaces? Assign_char Spaces? file_name:Text Spaces* { binder.template(file_name) }
+  / tag:List_selector Spaces? Assign_char Spaces? content:List_content Spaces* { binder.fill(tag, content) }
+  / tag:Selector Spaces? Assign_char Spaces? content:Content Spaces* { binder.fill(tag, content) }
 
 Selector
-  = selector:Word {return selector}
+  = selector:Word_sel {return selector}
+
+List_selector
+  = "{" selector:Word_sel "}" {return selector}
 
 Content
-  = text:(Text / Paragraph)
-{return text}
+  = text:(Text / Paragraph) {return text}
 
-Bracket_text
-  = '(' (!')' chars:Char+) ')' {return chars.join('')}
+Key_value
+  = key:Word Spaces* Assign_char Spaces* value:(Word_list Spaces*)+ ","? {return {key: key, value: value}}
 
-Curly_text
-  = '{' (!'}' chars:Char+) '}' {return chars.join('')}
+Item 
+  = (EOL Tab_char / Spaces)* chars:(Word_list)+ Spaces* ","? Spaces* { return chars.join('') }
 
-Normal_text
-  = chars:(Characters / Spaces)+ {return chars.join('')}
+List_content
+  = items:Item+ {return items}
+
+Text_line
+  = chars:(Char / Spaces)+ { return chars.join('') }
 
 Text
-  = Bracket_text
-  / Curly_text
-  / Normal_text
+  = Text_line
 
 Paragraph_line
-  = Tab_char text:Text+ {
-
-    if (text == '')
-      return '-';
-
-    return text;
-  }
+  = eol:EOL? Tab_char text:Text? { return eol + text }
 
 Paragraph
-  = EOL? line:Paragraph_line next:(EOL+ Paragraph)? {
-
-  if (next)
-    return line + next[0].join('') + next[1]
-  else
-    return line
-  }
+  = EOL+ lines:Paragraph_line+ { return lines.join('') }
 
 Word
-  = chars:Characters+ { return chars.join('') }
+  = chars:Char+ Spaces* { return chars.join('') }
+
+Word_sel
+  = chars:Safe_characters+ { return chars.join('') }
+
+Word_list
+  = chars:List_characters+ spaces:Spaces* {return chars.join('') + spaces}
 
 Spaces
-  = spaces:" "+ { return spaces.join("") }
+  = spaces:" "+ { return spaces.join('') }
 
 EOL
-  = space:Spaces* eol:"\n"+ {return eol.join('')}
+  = space:Spaces* eol:"\n"+ { return eol.join('') }
 
-Characters
-  = [.#a-zA-Z0-9\[\]=^'"(),]
+Safe_characters
+  = [.#a-zA-Z0-9\[\]=^'"(),] //'
+
+List_characters
+  = [.#a-zA-Z0-9\[\]\{\}=^'"():] //'
 
 Char
-  = .
+  = [.#a-zA-Z0-9\[\]\{\}\/=^'"(),:] //'
 
 Assign_char
   = [:]
