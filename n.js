@@ -1,5 +1,6 @@
 var parser 						= require('./syntax.js'),
 		scrapper					= require('./lib/scrapper.js'),
+		styler						= require('less');
 		fs 				  			= require('fs'),
 		Fiber 						= require('fibers'),
 		Future						= require('fibers/future'),
@@ -10,29 +11,34 @@ var parser 						= require('./syntax.js'),
 	  readfile 					= Future.wrap(fs.readFile),
 	  stat 							= Future.wrap(fs.stat);
 
+const prompt = ">".magenta + ">".magenta.bold + ">".cyan.bold + "   ";
 
-// TODO parser and less are alike, they both process files to produce files
-// TODO marked is a module of binder
+// TODO SERIOUS REFACTORING
+// the readmore : /this is just plain wrong.
+// instead readmore : (href: /this)
+
 
 Fiber(function(){
 
-	scrapper.scrap('./sources').wait();
+	scrapper.scrap('./sources', './public');
+	console.log(prompt + " Scrapped");
 
-	console.log(">>".yellow.bold + " Scrapped");
-
+	// TODO fix this
 	var files = scrapper._files;
 
 	for (var file in files.pages )
-		parser.parse(scrapper.getPage(file).toString(), undefined, undefined, write(file));
+		parser.parse(scrapper.getPage(file).toString(), undefined, undefined, file, write(file, 'Page'));
 
-	for (var file in files.styles )
-		styler.style(scrapper.getPage(file).toString())
+	// for (var file in files.styles )
+		// styler.render(scrapper.getStyle(file).toString(), write(file, 'Style'));
 
 }).run();
 
 // TODO use fibers
-write = function(name) {
+write = function(name, type) {
 	return function(err, file) {
-		scrapper.writePage(name, file);
+		// scrapper.writePage(name, file);
+		// console.log(prompt + type + " wrote " + name.grey);
+		console.log(file);
 	}
 }

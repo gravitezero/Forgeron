@@ -110,7 +110,8 @@ See example from SELECTORS
 LIST ORDERING
 =============
 
-How to order a list of pages by dates
+How to order a list of pages by dates ?
+How to select only the first / last 5 elements of the list ?
 
 
 METAPAGE
@@ -118,6 +119,7 @@ METAPAGE
 
 How to generate easily each author/tag pages
 create a page with inside the list of article written by author/with tag
+-> One will have to write a page for each author / tag
 
 
 HOOKS

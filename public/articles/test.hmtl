@@ -1,0 +1,16 @@
+<html>
+	<body>
+		<article>
+			<h1 id="title">This is a test post</h1>
+			By <span id="author">etn brd</span>
+			<date></date>
+			<ul class="tags">
+				<li class="tag">test</li><li class="tag">another test</li><li class="tag">yet another test</li></ul>
+			<div name="truc-machin">(href: truc)</div>
+			<content><h1>It works, should have 1 :</h1>
+<p>should have 2 :</p>
+<p>With multiple line, and so on ... should have 0 :</p>
+</content>
+		</article>
+	</body>
+</html>

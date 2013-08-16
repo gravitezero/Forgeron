@@ -1,8 +1,9 @@
 {
   // Arguments :
   // template, callback
-  var binder            = require('./lib/binder.js').apply(null, Array.prototype.slice.call(arguments,2));
-  
+  var binder            = require('./lib/binder.js').apply(null, Array.prototype.slice.call(arguments,2)),
+      marked            = require('marked');
+
 }
 
 start
@@ -14,6 +15,8 @@ Tuples
 Tuple
   = "template" Spaces? Assign_char Spaces? file_name:Text Spaces* { binder.template(file_name) }
   / tag:List_selector Spaces? Assign_char Spaces? content:List_content Spaces* { binder.fill(tag, content) }
+  / tag:Selector Spaces? Assign_char Spaces? "/" link:Word "(" Spaces* sel:(Key_value / Word_sel)+ Spaces* ")" Spaces* { binder.dummy("!!! " + tag + " link: '" + link + "' key_value: '" + sel + "'") }
+  / tag:Selector Spaces? Assign_char Spaces? "/" link:Word Spaces* sel:Selector? Spaces* { binder.insert(tag, link, sel ) }
   / tag:Selector Spaces? Assign_char Spaces? content:Content Spaces* { binder.fill(tag, content) }
 
 Selector
@@ -26,7 +29,7 @@ Content
   = text:(Text / Paragraph) {return text}
 
 Key_value
-  = key:Word Spaces* Assign_char Spaces* value:(Word_list Spaces*)+ ","? {return {key: key, value: value}}
+  = key:Word_sel Spaces* Assign_char Spaces* value:(Word_sel)+  Spaces* ","? {return {key: key, value: value}}
 
 Item 
   = (EOL Tab_char / Spaces)* chars:(Word_list)+ Spaces* ","? Spaces* { return chars.join('') }
@@ -44,7 +47,7 @@ Paragraph_line
   = eol:EOL? Tab_char text:Text? { return eol + text }
 
 Paragraph
-  = EOL+ lines:Paragraph_line+ { return lines.join('') }
+  = EOL+ lines:Paragraph_line+ { return marked(lines.join(''))}
 
 Word
   = chars:Char+ Spaces* { return chars.join('') }
@@ -62,10 +65,10 @@ EOL
   = space:Spaces* eol:"\n"+ { return eol.join('') }
 
 Safe_characters
-  = [.#a-zA-Z0-9\[\]=^'"(),] //'
+  = [.#a-zA-Z0-9\[\]=^'",_] //'
 
 List_characters
-  = [.#a-zA-Z0-9\[\]\{\}=^'"():] //'
+  = [.#a-zA-Z0-9\[\]\{\}=^'":] //'
 
 Char
   = [.#a-zA-Z0-9\[\]\{\}\/=^'"(),:] //'

@@ -1,9 +1,13 @@
-template: sources/templates/test.html
+template: test
 
 #title : This is a test post
 
 #author: etn brd
 [name^="truc"] : (href: truc)
+
+#readmore : /this
+link : /test (template: test)
+my_articles : /[.tag="blog"] (template: test)
 
 {.tag}:
   test,
@@ -20,4 +24,5 @@ content:
   # It works, should have 1 :
   should have 2 :
   
-  With multiple line, and so on ... should have 0 :
+  With multiple line, and so on ...
+  should have 0 :
